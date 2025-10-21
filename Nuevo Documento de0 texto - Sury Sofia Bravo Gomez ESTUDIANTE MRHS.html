@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juego de Memoria de Frutas</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to bottom right, #ffecd2, #fcb69f);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+  h1 {
+    color: #ff6600;
+  }
+  #info {
+    margin-bottom: 10px;
+    font-size: 18px;
+  }
+  #tablero {
+    display: grid;
+    grid-template-columns: repeat(4, 100px);
+    gap: 10px;
+  }
+  .carta {
+    width: 100px;
+    height: 100px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 40px;
+    cursor: pointer;
+    transition: transform 0.3s;
+  }
+  .volteada {
+    background-color: #fffae6;
+    transform: rotateY(180deg);
+  }
+  #mensaje {
+    margin-top: 15px;
+    font-size: 20px;
+    color: green;
+  }
+</style>
+</head>
+<body>
+
+<h1>🍇 Juego de Memoria de Frutas 🍉</h1>
+<div id="info">
+  ⏱ Tiempo: <span id="tiempo">30</span> seg | ⭐ Puntos: <span id="puntos">0</span>
+</div>
+<div id="tablero"></div>
+<div id="mensaje"></div>
+
+<script>
+const frutas = ["🍎", "🍌", "🍇", "🍊", "🍉", "🍓", "🍍", "🥝"];
+let cartas = [...frutas, ...frutas]; // duplicar frutas
+let tablero = document.getElementById("tablero");
+let puntos = 0;
+let primeraCarta = null;
+let bloqueado = true; // no se puede jugar durante los 3 segundos iniciales
+let tiempo = 30;
+let temporizador;
+
+function mezclar(array) {
+  return array.sort(() => Math.random() - 0.5);
+}
+
+function crearTablero() {
+  cartas = mezclar(cartas);
+  tablero.innerHTML = "";
+  cartas.forEach((emoji, i) => {
+    const carta = document.createElement("div");
+    carta.classList.add("carta");
+    carta.dataset.valor = emoji;
+    carta.dataset.id = i;
+    carta.textContent = emoji; // mostrar frutas inicialmente
+    tablero.appendChild(carta);
+  });
+
+  // Mostrar frutas 3 segundos, luego voltearlas
+  setTimeout(() => {
+    document.querySelectorAll(".carta").forEach(c => c.textContent = "");
+    bloqueado = false;
+    iniciarTemporizador();
+  }, 3000);
+}
+
+function iniciarTemporizador() {
+  temporizador = setInterval(() => {
+    tiempo--;
+    document.getElementById("tiempo").textContent = tiempo;
+    if (tiempo <= 0) {
+      clearInterval(temporizador);
+      bloquearTablero();
+      document.getElementById("mensaje").textContent = "⏰ ¡Tiempo agotado!";
+    }
+  }, 1000);
+}
+
+function bloquearTablero() {
+  document.querySelectorAll(".carta").forEach(c => c.style.pointerEvents = "none");
+}
+
+tablero.addEventListener("click", e => {
+  if (bloqueado) return;
+  const carta = e.target;
+  if (!carta.classList.contains("carta") || carta.textContent !== "") return;
+
+  carta.textContent = carta.dataset.valor;
+  carta.classList.add("volteada");
+
+  if (!primeraCarta) {
+    primeraCarta = carta;
+  } else {
+    if (primeraCarta.dataset.valor === carta.dataset.valor) {
+      puntos++;
+      document.getElementById("puntos").textContent = puntos;
+      primeraCarta = null;
+      if (puntos === frutas.length) {
+        clearInterval(temporizador);
+        document.getElementById("mensaje").textContent = "🎉 ¡Ganaste!";
+      }
+    } else {
+      bloqueado = true;
+      setTimeout(() => {
+        primeraCarta.textContent = "";
+        carta.textContent = "";
+        primeraCarta.classList.remove("volteada");
+        carta.classList.remove("volteada");
+        primeraCarta = null;
+        bloqueado = false;
+      }, 800);
+    }
+  }
+});
+
+crearTablero();
+</script>
+
+</body>
+</html>
